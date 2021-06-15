@@ -71,6 +71,10 @@ func (c *Client) send(params *url.Values) (*Response, error) {
 	return &respJson, nil
 }
 
+func (c *Client) SetSender(sender string) {
+	c.sender = sender
+}
+
 func (c *Client) SendSms(phone string, text string) (*Response, error) {
 	params := url.Values{}
 	params.Add("login", c.login)
