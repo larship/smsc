@@ -12,7 +12,7 @@ import (
 const smscUrl = "https://smsc.ru/sys/send.php"
 
 type Client struct {
-	client       *http.Client
+	client       HttpClient
 	login        string
 	password     string
 	sender       string
@@ -29,6 +29,11 @@ type Response struct {
 	ErrorCode int    `json:"error_code"`
 }
 
+type HttpClient interface {
+	Do(req *http.Request) (*http.Response, error)
+}
+
+// Create new API client instance
 func New(login string, password string) *Client {
 	client := &Client{
 		client:   &http.Client{},
@@ -41,11 +46,39 @@ func New(login string, password string) *Client {
 	return client
 }
 
+// Set HTTP client
+func (c *Client) SetHTTPClient(http HttpClient) {
+	c.client = http
+}
+
+// Set API login
+func (c *Client) SetLogin(login string) {
+	c.login = login
+}
+
+// Set API password
+func (c *Client) SetPassword(password string) {
+	c.password = password
+}
+
+// Set message sender parameter
+func (c *Client) SetSender(sender string) {
+	c.sender = sender
+}
+
+// Set message charset parameter
+func (c *Client) SetCharset(charset string) {
+	c.charset = charset
+}
+
+// Set message format parameter
+func (c *Client) SetFormat(format string) {
+	c.format = format
+}
+
+// Send message
 func (c *Client) send(params *url.Values) (*Response, error) {
-	req, err := http.NewRequest("POST", smscUrl, bytes.NewBufferString(params.Encode()))
-	if err != nil {
-		return nil, err
-	}
+	req, _ := http.NewRequest("POST", smscUrl, bytes.NewBufferString(params.Encode()))
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Add("Content-Length", strconv.Itoa(len(params.Encode())))
 
@@ -71,17 +104,14 @@ func (c *Client) send(params *url.Values) (*Response, error) {
 	return &respJson, nil
 }
 
-func (c *Client) SetSender(sender string) {
-	c.sender = sender
-}
-
+// Send SMS
 func (c *Client) SendSms(phone string, text string) (*Response, error) {
 	params := url.Values{}
 	params.Add("login", c.login)
 	params.Add("psw", c.password)
 	params.Add("phones", phone)
 	params.Add("mes", text)
-	params.Add("mes", c.sender)
+	params.Add("sender", c.sender)
 	params.Add("charset", c.charset)
 	params.Add("fmt", c.format)
 
